@@ -14,7 +14,7 @@ client = OpenAI()
 def show_json(obj):
 	print(json.loads(obj.model_dump_json()))
 
-recorder = PvRecorder(device_index=-1, frame_length=512)
+recorder = PvRecorder(device_index=1, frame_length=512)
 recorder.start()
 
 def get_next_audio_frame():
@@ -72,15 +72,15 @@ def askQuestion(question):
 				print(clip)
 				tool_call_id = run.required_action.submit_tool_outputs.tool_calls[0].id
 				print(tool_call_id)
-				message = client.beta.threads.messages.create(
+				run = client.beta.threads.runs.submit_tool_outputs(
 					thread_id=thread.id,
-					role="tool",
-					content=clip.decode('utf-8'),
-				)
-				show_json(message)
-				run = client.beta.threads.runs.create(
-					thread_id=thread.id,
-					assistant_id=assistant.id,
+					run_id=run.id,
+					tool_outputs=[
+						{
+							"tool_call_id": tool_call_id,
+							"output": "The content of my clipboard currently is: " + clip.decode(),
+						},
+					]
 				)
 				show_json(run)
 			else:
@@ -112,6 +112,7 @@ def useGPT():
 			make_text_to_speech(response)
 			while mixer.music.get_busy():
 				time.sleep(0.1)
+			mixer.music.unload
 			print("END")
 			break
 
@@ -121,13 +122,13 @@ porcupine = pvporcupine.create(
 )
 
 try:
-	print(askQuestion("What did I put in my clipboard?"))
-	#while True:
-	#	audio_frame = get_next_audio_frame()
-	#	keyword_index = porcupine.process(audio_frame)
-	#	if keyword_index == 0:
-	#		print("COMING")
-	#		useGPT()
+	#print(askQuestion("What did I put in my clipboard?"))
+	while True:
+		audio_frame = get_next_audio_frame()
+		keyword_index = porcupine.process(audio_frame)
+		if keyword_index == 0:
+			print("COMING")
+			useGPT()
 except KeyboardInterrupt:
 	print("Goodbye")
 	porcupine.delete()
