@@ -112,7 +112,7 @@ def useGPT():
 			make_text_to_speech(response)
 			while mixer.music.get_busy():
 				time.sleep(0.1)
-			mixer.music.unload
+			mixer.music.unload()
 			print("END")
 			break
 
